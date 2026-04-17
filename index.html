@@ -625,6 +625,10 @@ async function init() {
     useSampleData();
   }, { timeout: 15000, enableHighAccuracy: false });
 }
+
+// ページ読み込み時はサンプルデータを即表示し、ボタンで位置情報を取得
+useSampleData();
+document.getElementById('locationName').textContent = 'タップして現在地を取得';
 </script>
 </body>
 </html>
