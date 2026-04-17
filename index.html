@@ -570,6 +570,7 @@ function useSampleData() {
 
 /* ── UI更新 ── */
 function updateUI(data, locationName) {
+  document.getElementById('errorMsg').style.display = 'none';
   document.getElementById('locationName').textContent = locationName;
   const now      = new Date();
   const nowH     = now.getHours();
@@ -608,26 +609,44 @@ function hideLoading() {
 }
 
 /* ── 起動 ── */
-async function init() {
-  const btn = document.getElementById('locBtn');
+function init() {
+  const btn   = document.getElementById('locBtn');
+  const errEl = document.getElementById('errorMsg');
+  errEl.style.display = 'none';
   if (btn) btn.textContent = '取得中…';
-  if (!navigator.geolocation) { useSampleData(); return; }
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    try {
-      const lat = pos.coords.latitude.toFixed(4);
-      const lon = pos.coords.longitude.toFixed(4);
-      const [data, loc] = await Promise.all([fetchWeather(lat, lon), reverseGeocode(lat, lon)]);
-      if (btn) btn.style.display = 'none';
-      updateUI(data, loc);
-    } catch { useSampleData(); }
-  }, () => {
-    if (btn) { btn.textContent = '再試行'; }
-    useSampleData();
-  }, { timeout: 15000, enableHighAccuracy: false });
+
+  if (!navigator.geolocation) {
+    if (btn) btn.textContent = '非対応';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      var lat = pos.coords.latitude.toFixed(4);
+      var lon = pos.coords.longitude.toFixed(4);
+      Promise.all([fetchWeather(lat, lon), reverseGeocode(lat, lon)])
+        .then(function(results) {
+          if (btn) btn.style.display = 'none';
+          errEl.style.display = 'none';
+          updateUI(results[0], results[1]);
+        })
+        .catch(function() {
+          if (btn) btn.textContent = '再試行';
+        });
+    },
+    function(err) {
+      if (btn) btn.textContent = '再試行';
+      // ホーム画面追加後は設定から許可が必要な旨を表示
+      errEl.textContent = '位置情報が許可されていません。設定→プライバシー→位置情報サービス→Safari/Chromeで「許可」にしてください。';
+      errEl.style.display = 'block';
+    },
+    { timeout: 15000, enableHighAccuracy: false, maximumAge: 60000 }
+  );
 }
 
-// ページ読み込み時はサンプルデータを即表示し、ボタンで位置情報を取得
+// ページ読み込み時：エラーなしでサンプル表示
 useSampleData();
+document.getElementById('errorMsg').style.display = 'none';
 document.getElementById('locationName').textContent = 'タップして現在地を取得';
 </script>
 </body>
