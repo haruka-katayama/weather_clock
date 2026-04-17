@@ -495,11 +495,20 @@ clockTick();
 /* ════════════════════════════════
    時間別リスト
    ════════════════════════════════ */
+/* 最後に描画したデータを保持（時刻更新に使う） */
+let _hourlyData = null;
+
 function renderHourly(hours, temps, codes, rains) {
+  _hourlyData = { hours, temps, codes, rains };
+  _doRenderHourly();
+}
+
+function _doRenderHourly() {
+  if (!_hourlyData) return;
+  const { hours, temps, codes, rains } = _hourlyData;
   const list  = document.getElementById('hourlyList');
   list.innerHTML = '';
   const nowH  = new Date().getHours();
-  let curEl   = null;
 
   hours.forEach((h, i) => {
     const info  = getWeatherInfo(codes[i]);
@@ -512,9 +521,19 @@ function renderHourly(hours, temps, codes, rains) {
       <div class="hour-temp">${Math.round(temps[i])}°</div>
       <div class="hour-rain">💧${rains[i]}mm</div>`;
     list.appendChild(div);
-    if (isCur) curEl = div;
   });
 }
+
+/* 毎分チェックして時間が変わったら「今」ハイライトと天気データを更新 */
+let _lastHour = new Date().getHours();
+setInterval(() => {
+  const nowH = new Date().getHours();
+  if (nowH !== _lastHour) {
+    _lastHour = nowH;
+    _doRenderHourly();   // 時間別の「今」を更新
+    init();              // 天気データを再取得して現在の気温・天気も更新
+  }
+}, 60000);
 
 /* ════════════════════════════════
    天気API
