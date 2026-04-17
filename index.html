@@ -308,7 +308,17 @@
   <div class="card current-card">
     <div class="location-row">
       <span>📍</span>
-      <span id="locationName">現在地を取得中...</span>
+      <span id="locationName">タップして現在地を取得</span>
+      <button id="locBtn" onclick="init()" style="
+        margin-left:8px;
+        background:rgba(100,160,255,.2);
+        border:1px solid rgba(100,160,255,.4);
+        border-radius:8px;
+        color:rgba(180,210,255,.9);
+        font-size:clamp(9px,1vw,12px);
+        padding:3px 10px;
+        cursor:pointer;
+      ">取得する</button>
     </div>
     <div class="error-msg" id="errorMsg">位置情報が取得できませんでした。サンプルデータを表示中。</div>
     <div class="current-main">
@@ -599,18 +609,22 @@ function hideLoading() {
 
 /* ── 起動 ── */
 async function init() {
+  const btn = document.getElementById('locBtn');
+  if (btn) btn.textContent = '取得中…';
   if (!navigator.geolocation) { useSampleData(); return; }
   navigator.geolocation.getCurrentPosition(async (pos) => {
     try {
       const lat = pos.coords.latitude.toFixed(4);
       const lon = pos.coords.longitude.toFixed(4);
       const [data, loc] = await Promise.all([fetchWeather(lat, lon), reverseGeocode(lat, lon)]);
+      if (btn) btn.style.display = 'none';
       updateUI(data, loc);
     } catch { useSampleData(); }
-  }, () => useSampleData(), { timeout: 15000 });
+  }, () => {
+    if (btn) { btn.textContent = '再試行'; }
+    useSampleData();
+  }, { timeout: 15000, enableHighAccuracy: false });
 }
-
-init();
 </script>
 </body>
 </html>
